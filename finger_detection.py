@@ -1,7 +1,7 @@
 from collections import defaultdict
 import numpy as np
 from rotate_crop import *
-
+from music import Note
 
 def skin_detection(img):
     """
@@ -128,7 +128,7 @@ def hand_detection(skin):
         # Draw the center of the circle
         cv2.circle(neck.image, (i[0], i[1]), 2, (0, 0, 255), 3)
 
-    return cv2.cvtColor(canny_edges, cv2.COLOR_GRAY2BGR), neck.image
+    return cv2.cvtColor(canny_edges, cv2.COLOR_GRAY2BGR), neck.image, circles
 
 
 def refine_hand_region(neck, skin):
@@ -182,6 +182,62 @@ def refine_hand_region(neck, skin):
 
     return skin
 
+
+
+def finger_location_detection(neck_strings, neck_fret, circles):
+    neck_fret.reverse() # Reverse the x-cords to go from the first to last fret
+    for xy in circles[0, :]:
+            finger_x = xy[0]
+            finger_y = xy[1]
+
+            x_diff = [finger_x - x for x in neck_fret]
+            sign = None
+            prev_sign = None
+            for i in range(len(x_diff)):
+                prev_sign = sign
+                if x_diff[i] > 0:
+                    sign = 1
+
+                elif x_diff[i] < 0:
+                    sign = -1
+
+                else:
+                    sign = 0
+                    print("Will implement later: if finger is on fret")
+
+                if sign != prev_sign and i != 0:
+                    break
+
+            fret_diff = i # For some reason the -2 corrects the note for now
+            
+
+            y_diff = []
+            for string, pts in neck_strings.separating_lines.items():
+                    string_y = pts[0][1]
+                    y_diff.append([string, abs(string_y-finger_y)])
+                    if len(y_diff) == 2:
+                        if y_diff[0][1] == y_diff[1][1]:
+                            del y_diff[0]
+                            print("Will implement later: if y_diff are the same")
+
+                        elif y_diff[0][1] < y_diff[1][1]:
+                            del y_diff[1]
+
+                        else:
+                            del y_diff[0]
+
+            #print(fret_diff)
+            #print(y_diff)
+
+            note = Note(y_diff[0][0])
+            shifted_note = note + fret_diff
+            print("The note on the " + str(y_diff[0][0]) + " string is " + str(shifted_note))
+
+            
+
+
+
+    
 
 if __name__ == "__main__":
     print("Run finger_detection_tests.py to have a look at results!")
