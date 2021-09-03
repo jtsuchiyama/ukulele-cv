@@ -111,7 +111,7 @@ def fret_detection(neck):
     Detecting frets by detecting vertical components that are potential frets (provided they are lines detected
     by Hough transform and respect a logarithmic ratio)
     :param neck: An Image object of the picture cropped around the horizontal neck
-    :return: an Image object of the picture with the frets detected (illustration purpose at the moment)
+    :return: an Image object of the picture with the frets detected and a list of coordinates for the frets
     """
     height = len(neck.image)
     width = len(neck.image[0])
