@@ -1,7 +1,7 @@
 from collections import defaultdict
 import numpy as np
 from rotate_crop import *
-from music import Note
+from mingus.core.notes import augment, reduce_accidentals
 
 def skin_detection(img):
     """
@@ -95,30 +95,13 @@ def hand_detection(skin):
     Detecting contours in hand using Canny detection
     Also trying to find fingertips (currently not working...)
     :param img: an image as defined in OpenCV, after skin detection and refining
-    :return: an image as defined in OpenCV, you may choose whether you want the contours or the results
-    of the circular Hough transform (which is not working as of 02/04/2017...)
+    :return: images as defined in OpenCV of the hand contours, the circular Hough transform of the contours, and the detected fingertips
     """
     neck = Image(img=skin)
     neck.set_image(locate_hand_region(skin_detection(neck.image)))
     neck.set_image(cv2.medianBlur(neck.image, 5))
     neck.set_gray(cv2.cvtColor(neck.image, cv2.COLOR_BGR2GRAY))
     canny_edges = neck.edges_canny(min_val=70, max_val=100, aperture=3)
-
-    #height = len(neck.image)
-    #width = len(neck.image[0])
-    #contour_image = np.zeros((height, width, 3), np.uint8) # blank image of same height 
-    #contour_image = cv2.cvtColor(contour_image, cv2.COLOR_BGR2GRAY) # convert to gray image
-    
-    #ret, thresh = cv2.threshold(neck.gray, 127, 255, 0)
-    #contours, hierarchy = cv2.findContours(canny_edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    
-    #for cnt in contours:
-        #area = cv2.contourArea(cnt)
-        #perimeter = cv2.arcLength(cnt, False)
-        #if perimeter > 100:
-            #cv2.drawContours(contour_image, cnt, -1, (255, 255, 255), 3)
-
-    #cv2.drawContours(contour_image, contours, -1, (255, 255, 255), 3)
 
     circles = cv2.HoughCircles(canny_edges, cv2.HOUGH_GRADIENT, 1, 5, param1=100, param2=20, minRadius=5, maxRadius=60)
     circles = np.uint16(np.around(circles))
@@ -185,15 +168,30 @@ def refine_hand_region(neck, skin):
 
 
 def finger_location_detection(neck_strings, neck_fret, circles):
+    """
+    Determining the notes being played based on the fingertip location relative to the strings and frets
+    The assumption is made that whichever frets the fingertip is between is being played
+    The assumption is made that the closest string to the fingertip is being played
+    :param neck_strings: a String object that most importantly contains the y-coordinates of the strings 
+    :param neck_fret: a list of the x-coordinates of the fret lines
+    :param circles: an image as defined in OpenCV of the the detected fingertips
+    :return: a list of notes
+    """
+
+    notes = []
+
     neck_fret.reverse() # Reverse the x-cords to go from the first to last fret
     for xy in circles[0, :]:
-            finger_x = xy[0]
-            finger_y = xy[1]
+        # Calculating the position/note for each finger
+            finger_x = xy[0] # x-coord
+            finger_y = xy[1] # y-coord
 
-            x_diff = [finger_x - x for x in neck_fret]
+            # 1. We determine which frets the finger is between by observing the differences in x-coords of the finger and frets
+            x_diff = [finger_x - x for x in neck_fret] # List of differences between x-coords of finger and frets
             sign = None
             prev_sign = None
             for i in range(len(x_diff)):
+                # Determining when the sign changes, which indicates when the finger is between two frets
                 prev_sign = sign
                 if x_diff[i] > 0:
                     sign = 1
@@ -208,11 +206,13 @@ def finger_location_detection(neck_strings, neck_fret, circles):
                 if sign != prev_sign and i != 0:
                     break
 
-            fret_diff = i # For some reason the -2 corrects the note for now
+            fret_diff = i
             
 
+            # 2. We determine which string each finger is on by finding out which string has the closest y-coord to the finger
             y_diff = []
             for string, pts in neck_strings.separating_lines.items():
+                # Narrowing down which string is closest to the finger
                     string_y = pts[0][1]
                     y_diff.append([string, abs(string_y-finger_y)])
                     if len(y_diff) == 2:
@@ -226,12 +226,17 @@ def finger_location_detection(neck_strings, neck_fret, circles):
                         else:
                             del y_diff[0]
 
-            #print(fret_diff)
-            #print(y_diff)
 
-            note = Note(y_diff[0][0])
-            shifted_note = note + fret_diff
-            print("The note on the " + str(y_diff[0][0]) + " string is " + str(shifted_note))
+
+            # 3. We augment the starting note of the string some "fret_diff" amount of times to determine the note played by each finger
+            note = y_diff[0][0]
+            for i in range(fret_diff):
+                note = augment(note)
+            
+            note = reduce_accidentals(note)
+            notes.append(note)
+
+    return notes
 
             
 

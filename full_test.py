@@ -5,6 +5,7 @@ from image import Image
 from rotate_crop import rotate_neck_picture, crop_neck_picture
 from grid_detection import string_detection, fret_detection
 from finger_detection import hand_detection, locate_hand_region, skin_detection, finger_location_detection
+from music_detection import chord_detection
 import cv2
 import copy
 
@@ -38,15 +39,16 @@ def full_test():
         contour_image, circular_hough, circles = hand_detection(refined_hand_region)
 
 
+        notes = finger_location_detection(neck_strings, neck_fret, circles)
+        print("The notes are " + str(notes))
 
-        finger_location_detection(neck_strings, neck_fret, circles)
-
+        chord = chord_detection(notes)
+        print("The chord is " + str(chord))
 
 
         plt.subplot(int("42" + str(i)))
         i += 1
         plt.imshow(cv2.cvtColor(skin, cv2.COLOR_BGR2RGB))
-
 
 
         plt.subplot(int("42" + str(i)))
