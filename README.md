@@ -9,10 +9,6 @@ This repository is an adaptation of Paulden's Guitar Fingering Recognition work.
 - `finger_detection_tests.py`: concentrating its energy on the detection of fingertips on the neck (but currently failing)
 - `full_test.py`: runs all features to locate the strings, frets, notes, and chords
 
-Time performance will be displayed as well as original images and result images.
-
-Should you have a look at how the code is running, open `rotate_crop.py`, `grid_detection.py` and `finger_detection.py`.
-
 ## Credits
 
 https://github.com/paulden/guitar-fingering-recognition
