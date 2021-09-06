@@ -66,7 +66,7 @@ def crop_neck_picture(image):
             if i > 3 and first_y == 0:
                 first_y = y_sort[i]
 
-    return Image(img=image_to_crop[first_y - 10:last_y + 10])
+    return Image(img=image_to_crop[first_y - 15:last_y + 15])
 
 
 def resize_image(img):

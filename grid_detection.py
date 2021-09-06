@@ -17,7 +17,7 @@ def string_detection(neck):
     """
     height = len(neck.image)
     width = len(neck.image[0])
-    neck_with_strings = np.zeros((height, width, 3), np.uint8)
+    neck_with_strings = np.zeros((height, width, 4), np.uint8)
 
     # 1. Detect strings with Hough transform and form an Image based on these
     edges = neck.edges_sobely()
@@ -61,14 +61,14 @@ def string_detection(neck):
         gaps = [g for g in slices_differences[j] if g > 1]
         points_dict[j] = []
 
-        if len(gaps) > 3:
+        if len(gaps) > 3: 
             median_gap = median(gaps)
             for index, diff in enumerate(slices_differences[j]):
                 if abs(diff - median_gap) < 4:
                     points_dict[j].append((j, slices[j][index] + int(median_gap / 2)))
                 elif abs(diff / 2 - median_gap) < 4:
                     points_dict[j].append((j, slices[j][index] + int(median_gap / 2)))
-                    points_dict[j].append((j, slices[j][index] + int(3 * median_gap / 2)))
+                    points_dict[j].append((j, slices[j][index] + int(3 * median_gap / 2))) 
 
         points.extend(points_dict[j])
 
@@ -80,16 +80,19 @@ def string_detection(neck):
 
     points_divided = [[] for i in range(3)]
     for s in points_dict.keys():
-        for i in range(3):
+        for i in range(3): 
             try:
-                # cv2.circle(neck.image, points_dict[s][i], 3, (255, 0, 0), -1)
+                #cv2.circle(neck.image, points_dict[s][i], 3, (255, 0, 0), -1)
                 points_divided[i].append(points_dict[s][i])
             except IndexError:
                 pass
 
+    #print(points_dict)
+    #print(points_divided)
+
     # 3. Use fitLine function to form lines separating each string
 
-    tuning = ["G", "C", "E", "A"]
+    tuning = ["G", "C", "E", "A"] 
     strings = Strings(tuning)
 
     for i in range(3):
@@ -103,7 +106,8 @@ def string_detection(neck):
 
         cv2.line(neck.image, (width - 1, right_extreme), (0, left_extreme), (0, 0, 255), 2)
 
-    return strings, Image(img=neck.image)
+
+    return strings, neck_str, points
 
 
 def fret_detection(neck):
@@ -123,6 +127,7 @@ def fret_detection(neck):
     # edges = cv2.medianBlur(edges, 3)
 
     lines = neck.lines_hough_transform(edges, 20, 5)  # TODO: Calibrate params automatically if possible
+
     size = len(lines)
 
     for x in range(size):
@@ -186,7 +191,7 @@ def fret_detection(neck):
     for x in potential_frets:
         cv2.line(neck.image, (x, 0), (x, height), (127, 0, 255), 3)
 
-    return Image(img=neck.image), potential_frets
+    return Image(img=neck.image), potential_frets, neck_with_frets
 
 
 if __name__ == "__main__":

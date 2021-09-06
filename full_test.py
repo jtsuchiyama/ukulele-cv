@@ -20,23 +20,35 @@ def full_test():
         cropped_image = crop_neck_picture(rotated_image)
         orig_cropped_image = copy.deepcopy(cropped_image)
 
-        neck_strings = string_detection(cropped_image)[0]
-        neck_fret_img, neck_fret = fret_detection(cropped_image)
+        neck_strings, neck_str, points = string_detection(cropped_image)
+        
+
+        neck_fret_img, neck_fret, neck_with_frets = fret_detection(cropped_image)
         for string, pts in neck_strings.separating_lines.items():
             cv2.line(neck_fret_img.image, pts[0], pts[1], (127, 0, 255), 2)
+
+        for p in points:
+            cv2.circle(neck_fret_img.image, p, 3, (0, 255, 0), -1)
+
 
         plt.subplot(int("42" + str(i)))
         i += 1
         plt.imshow(cv2.cvtColor(chord_image.image, cv2.COLOR_BGR2RGB))
+
+        #plt.subplot(int("42" + str(i)))
+        #i += 1
+        #plt.imshow(cv2.cvtColor(neck_str.image, cv2.COLOR_BGR2RGB))
+        
         plt.subplot(int("42" + str(i)))
         i += 1
         plt.imshow(cv2.cvtColor(neck_fret_img.image, cv2.COLOR_BGR2RGB))
 
-
+        plt.subplot(int("42" + str(i)))
+        i += 1
+        plt.imshow(cv2.cvtColor(neck_with_frets, cv2.COLOR_BGR2RGB))
 
         skin = skin_detection(orig_cropped_image.image)
-        refined_hand_region = locate_hand_region(skin)
-        contour_image, circular_hough, circles = hand_detection(refined_hand_region)
+        contour_image, circular_hough, circles = hand_detection(skin)
 
 
         notes = finger_location_detection(neck_strings, neck_fret, circles)
@@ -44,7 +56,6 @@ def full_test():
 
         chord = chord_detection(notes)
         print("The chord is " + str(chord))
-
 
         plt.subplot(int("42" + str(i)))
         i += 1
